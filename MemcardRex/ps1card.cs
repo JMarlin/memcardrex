@@ -4,13 +4,13 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using System.Drawing;
 using System.IO;
+using SixLabors.ImageSharp;
 using System.Security.Cryptography;
 
 namespace MemcardRex
 {
-    class ps1card
+    public class ps1card
     {
         //Memory Card's name
         public string cardName = null;
@@ -40,7 +40,7 @@ namespace MemcardRex
         public Color[,] iconPalette = new Color[15,16];
 
         //Memory Card icon data, 15 slots, 3 icons per slot, (16*16px icons)
-        public Bitmap[,] iconData = new Bitmap[15,3];
+        public Image<Rgba32>[,] iconData = new Image<Rgba32>[15,3];
 
         //Number of icon frames
         public int[] iconFrames = new int[15];
@@ -845,7 +845,7 @@ namespace MemcardRex
                     
                     //Get the color value
                     if ((redChannel | greenChannel | blueChannel | blackFlag) == 0) iconPalette[slotNumber, colorCounter] = Color.Transparent;
-                    else iconPalette[slotNumber, colorCounter] = Color.FromArgb(redChannel, greenChannel, blueChannel);
+                    else iconPalette[slotNumber, colorCounter] = Color.FromRgba((byte)redChannel, (byte)greenChannel, (byte)blueChannel, 255);
                     colorCounter++;
                 }
             }
@@ -857,7 +857,7 @@ namespace MemcardRex
             int byteCount = 0;
 
             //Clear existing data
-            iconData = new Bitmap[15,3]; 
+            iconData = new Image<Rgba32>[15,3]; 
 
             //Cycle through each slot
             for (int slotNumber = 0; slotNumber < 15; slotNumber++)
@@ -865,15 +865,15 @@ namespace MemcardRex
                 //Each save has 3 icons (some are data but those will not be shown)
                 for (int iconNumber = 0; iconNumber < 3; iconNumber++)
                 {
-                    iconData[slotNumber, iconNumber] = new Bitmap(16, 16);
+                    iconData[slotNumber, iconNumber] = new Image<Rgba32>(16, 16);
                     byteCount = 128 + ( 128 * iconNumber);
 
                     for (int y = 0; y < 16; y++)
                     {
                         for (int x = 0; x < 16; x += 2)
                         {
-                            iconData[slotNumber, iconNumber].SetPixel(x, y, iconPalette[slotNumber, saveData[slotNumber, byteCount] & 0xF]);
-                            iconData[slotNumber, iconNumber].SetPixel(x + 1, y, iconPalette[slotNumber, saveData[slotNumber, byteCount] >> 4]);
+                            iconData[slotNumber, iconNumber][x, y] = iconPalette[slotNumber, saveData[slotNumber, byteCount] & 0xF];
+                            iconData[slotNumber, iconNumber][x + 1, y] = iconPalette[slotNumber, saveData[slotNumber, byteCount] >> 4];
                             byteCount++;
                         }
                     }
